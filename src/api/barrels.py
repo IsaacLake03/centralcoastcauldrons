@@ -31,14 +31,14 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
     print(wholesale_catalog)
-    geenOrder = 0
+    greenOrder = 0
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory"))
-        greenPot = result.fetchone()
-        if greenPot < 10:
+        greenPot = result.fetchone()[0]
+        if greenPot[0] < 10:
             greenOrder = 1
 
-
+ 
     return [
         {
             "sku": "SMALL_GREEN_BARREL",
