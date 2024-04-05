@@ -36,7 +36,7 @@ def get_bottle_plan():
     greenPotQty = 0
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory"))
-        greenml = result.fetchone()[0]
+        greenml = result.scalar()
 
 
     while greenml > 100:
@@ -46,8 +46,8 @@ def get_bottle_plan():
     with db.engine.begin() as connection:
         connection.execute(
             sqlalchemy.text("UPDATE global_inventory SET num_green_ml = :greenml"),
-            greenml=greenml
-        )
+            {"greenml": greenml}
+    )
     return [
             {
                 "potion_type": [100, 0, 0, 0],
