@@ -43,12 +43,10 @@ def get_bottle_plan():
     greenPotQty = 0
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory"))
-        greenml = result.scalar(1)
+        greenml = result.scalar_one()
 
-
-    while greenml > 100:
-        greenml -= 100
-        greenPotQty += 1
+    greenPotQty = greenml // 100
+    greenml = greenml % 100
 
     with db.engine.begin() as connection:
         connection.execute(
