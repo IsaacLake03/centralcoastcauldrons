@@ -21,11 +21,15 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     print(f"potions delievered: {potions_delivered} order_id: {order_id}")
     with db.engine.begin() as connection:
         greenPot = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar_one()
+        greenml = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
+        greenml -= potions_delivered[0].quantity * 100
         greenPot += potions_delivered[0].quantity 
         connection.execute(
             sqlalchemy.text("UPDATE global_inventory SET num_green_potions = :greenPot"),
-            {"greenPot": greenPot}
-    )
+            {"greenPot": greenPot})
+        connection.execute(
+            sqlalchemy.text("UPDATE global_inventory SET num_green_ml = :greenml"),
+            {"greenml": greenml})
 
     return "OK"
 
@@ -48,11 +52,7 @@ def get_bottle_plan():
     greenPotQty = greenml // 100
     greenml = greenml % 100
 
-    with db.engine.begin() as connection:
-        connection.execute(
-            sqlalchemy.text("UPDATE global_inventory SET num_green_ml = :greenml"),
-            {"greenml": greenml}
-    )
+
     return [
             {
                 "potion_type": [0, 100, 0, 0],
