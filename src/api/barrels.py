@@ -23,6 +23,20 @@ class Barrel(BaseModel):
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
     print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
+    i=0
+    for barrel in barrels_delivered:
+        with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory"))
+            greenml = result.scalar(1)
+            greenml += barrels_delivered[i].ml_per_barrel * barrels_delivered[i].quantity
+            result = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory"))
+            gold = result.scalar(1)
+            gold -= barrels_delivered[i].price * barrels_delivered[i].quantity
+            connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = :greenml"),
+            {"greenml": greenml})
+            connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold"),
+            {"gold": gold})
+            i+=1
 
     return "OK"
 
@@ -34,7 +48,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     greenOrder = 0
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory"))
-        greenPot = result.scalar()
+        greenPot = result.scalar_one()
         if greenPot < 10:
             greenOrder = 1
 
