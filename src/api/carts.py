@@ -114,6 +114,13 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             sqlalchemy.text("UPDATE global_inventory SET gold = :gold"),
             {"gold": gold}
         )
+        potions = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar_one()
+        potions -=1
+        connection.execute(
+            sqlalchemy.text("UPDATE global_inventory SET num_green_potions = :potions"),
+            {"potions": potions}
+        )
+        
 
         
     return {"total_potions_bought": 1, "total_gold_paid": 50}
