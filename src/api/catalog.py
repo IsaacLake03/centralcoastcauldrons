@@ -13,6 +13,8 @@ def get_catalog():
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory"))
         greenPot = result.scalar_one()
+        if(greenPot>=1):
+            greenPot = 1
 
 
     return [
@@ -21,6 +23,6 @@ def get_catalog():
                 "name": "green potion",
                 "quantity": greenPot,
                 "price": 50,
-                "potion_type": [100, 0, 0, 0],
+                "potion_type": [0, 100, 0, 0],
             }
         ]
