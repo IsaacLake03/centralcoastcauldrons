@@ -51,11 +51,16 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         greenPot = result.scalar_one()
         if greenPot < 10:
             greenOrder = 1
-
+    sku=0
+    i=0
+    for barrel in wholesale_catalog:
+        i+=1
+        if barrel.potion_type == [0, 100, 0, 0]:
+            sku=i
  
     return [
         {
-            "sku": wholesale_catalog[0].sku,
+            "sku": wholesale_catalog[i].sku,
             "quantity": greenOrder,
         }
     ]
