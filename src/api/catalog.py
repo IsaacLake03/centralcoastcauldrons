@@ -12,10 +12,11 @@ def get_catalog():
     """
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory"))
-        greenPot = result.scalar_one()
-        if(greenPot>=1):
+        greenPot = result.scalar()
+        if greenPot is not None and greenPot >= 1:
             greenPot = 1
-
+        else:
+            greenPot = 0
 
     return [
             {
