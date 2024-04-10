@@ -22,14 +22,39 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     with db.engine.begin() as connection:
         greenPot = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar_one()
         greenml = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
-        greenml -= potions_delivered[0].quantity * 100
-        greenPot += potions_delivered[0].quantity 
+        redml = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
+        redPot = connection.execute(sqlalchemy.text("SELECT num_red_potions FROM global_inventory")).scalar_one()
+        blueml = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one()
+        bluePot = connection.execute(sqlalchemy.text("SELECT num_blue_potions FROM global_inventory")).scalar_one()
+        
+        for potion in potions_delivered:
+            if potion.potion_type == [0, 100, 0, 0]:
+                greenPot += potion.quantity
+                greenml -= potion.quantity*100
+            elif potion.potion_type == [100, 0, 0, 0]:
+                redPot += potion.quantity
+                redml -= potion.quantity*100
+            elif potion.potion_type == [0, 0, 100, 0]:
+                bluePot += potion.quantity
+                blueml -= potion.quantity*100
         connection.execute(
             sqlalchemy.text("UPDATE global_inventory SET num_green_potions = :greenPot"),
             {"greenPot": greenPot})
         connection.execute(
             sqlalchemy.text("UPDATE global_inventory SET num_green_ml = :greenml"),
             {"greenml": greenml})
+        connection.execute(
+            sqlalchemy.text("UPDATE global_inventory SET num_red_potions = :redPot"),
+            {"redPot": redPot})
+        connection.execute(
+            sqlalchemy.text("UPDATE global_inventory SET num_red_ml = :redml"),
+            {"redml": redml})
+        connection.execute(
+            sqlalchemy.text("UPDATE global_inventory SET num_blue_potions = :bluePot"),
+            {"bluePot": bluePot})
+        connection.execute(
+            sqlalchemy.text("UPDATE global_inventory SET num_blue_ml = :blueml"),
+            {"blueml": blueml})
         connection.commit()
 
     return "OK"
@@ -46,21 +71,47 @@ def get_bottle_plan():
 
     # Initial logic: bottle all barrels into red potions.
     greenPotQty = 0
+    redPotQty = 0
+    bluePotQty = 0
+    order = []
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory"))
-        greenml = result.scalar_one()
+        greenml = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
+        redml = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
+        blueml = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one()
 
-    greenPotQty = (greenml // 100)-1
-    
-    if greenPotQty == 0:
-        return []
-    
-    return [
+    while greenml >= 100:
+        greenml -= 100
+        greenPotQty += 1
+    while redml >= 100:
+        redml -= 100
+        redPotQty += 1
+    while blueml >= 100:
+        blueml -= 100
+        bluePotQty += 1
+        
+    if greenPotQty > 0:
+        order.append(
             {
                 "potion_type": [0, 100, 0, 0],
                 "quantity": greenPotQty,
             }
-        ]
+        )
+    if redPotQty > 0:
+        order.append(
+            {
+                "potion_type": [100, 0, 0, 0],
+                "quantity": redPotQty,
+            }
+        )
+    if bluePotQty > 0:
+        order.append(
+            {
+                "potion_type": [0, 0, 100, 0],
+                "quantity": bluePotQty,
+            }
+        )
+    
+    return order
 
 if __name__ == "__main__":
     print(get_bottle_plan())
