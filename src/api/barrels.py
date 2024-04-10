@@ -37,6 +37,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
             connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold"),
             {"gold": gold})
             i+=1
+            connection.commit()
 
     return "OK"
 

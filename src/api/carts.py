@@ -120,6 +120,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             connection.execute(
                 sqlalchemy.text("UPDATE global_inventory SET num_green_potions = :potions"),
                 {"potions": potions})
+            connection.commit()
             return {"total_potions_bought": 1, "total_gold_paid": 50}
         
     return []
