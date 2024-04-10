@@ -49,10 +49,11 @@ def get_bottle_plan():
         result = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory"))
         greenml = result.scalar_one()
 
-    greenPotQty = greenml // 100
-    greenml = greenml % 100
-
-
+    greenPotQty = (greenml // 100)-1
+    
+    if greenPotQty == 0:
+        return []
+    
     return [
             {
                 "potion_type": [0, 100, 0, 0],
