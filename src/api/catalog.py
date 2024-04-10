@@ -16,7 +16,7 @@ def get_catalog():
         if greenPot is not None and greenPot >= 1:
             greenPot = 1
         else:
-            greenPot = 0
+            return []
 
     return [
             {

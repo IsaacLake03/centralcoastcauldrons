@@ -57,6 +57,8 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         i+=1
         if barrel.potion_type == [0, 100, 0, 0]:
             green=i
+    if greenOrder == 0:
+        return []
  
     return [
         {
