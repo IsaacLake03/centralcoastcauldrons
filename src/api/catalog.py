@@ -17,7 +17,7 @@ def get_catalog():
             greenPot = 1
         else:
             return []
-
+        
     return [
             {
                 "sku": "GREEN_POTION_1",
