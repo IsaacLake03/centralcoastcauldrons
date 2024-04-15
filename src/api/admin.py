@@ -24,6 +24,5 @@ def reset():
         connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_red_ml = 0"))
         connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_blue_ml = 0"))
         connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = 100"))
-        connection.commit()
     return "OK"
 

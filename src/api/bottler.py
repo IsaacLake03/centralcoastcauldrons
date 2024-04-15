@@ -55,7 +55,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         connection.execute(
             sqlalchemy.text("UPDATE global_inventory SET num_blue_ml = :blueml"),
             {"blueml": blueml})
-        connection.commit()
+
 
     return "OK"
 
