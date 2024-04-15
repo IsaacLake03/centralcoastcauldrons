@@ -23,43 +23,34 @@ class Barrel(BaseModel):
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
     print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
-    i=0
-    for barrel in barrels_delivered:
-        with db.engine.begin() as connection:
-            greenml = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
-            redml = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
-            blueml = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
-            gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
+    with db.engine.begin() as transaction:
+        greenml = transaction.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
+        redml = transaction.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
+        blueml = transaction.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one()
+        
+        for barrel in barrels_delivered:
+            if barrel.potion_type == [0, 1, 0, 0]:
+                greenml += barrel.ml_per_barrel * barrel.quantity
+            elif barrel.potion_type == [1, 0, 0, 0]:
+                redml += barrel.ml_per_barrel * barrel.quantity
+            elif barrel.potion_type == [0, 0, 1, 0]:
+                blueml += barrel.ml_per_barrel * barrel.quantity
             
-            for barrel in barrels_delivered:
-                if barrel.potion_type == [0, 1, 0, 0]:
-                    greenml += barrel.ml_per_barrel * barrel.quantity
-                    gold -= barrel.price.quantity
-                elif barrel.potion_type == [1, 0, 0, 0]:
-                    redml += barrel.ml_per_barrel * barrel.quantity
-                    gold -= barrel.price.quantity
-                elif barrel.potion_type == [0, 0, 1, 0]:
-                    blueml += barrel.ml_per_barrel * barrel.quantity
-                    gold -= barrel.price.quantity
-                
-            connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = :greenml"),
-            {"greenml": greenml})
-            connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_red_ml = :redml"),
-            {"redml": redml})
-            connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_blue_ml = :blueml"),
-            {"blueml": blueml})
-            connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold"),
-            {"gold": gold})
+        transaction.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = :greenml"),
+        {"greenml": greenml})
+        transaction.execute(sqlalchemy.text("UPDATE global_inventory SET num_red_ml = :redml"),
+        {"redml": redml})
+        transaction.execute(sqlalchemy.text("UPDATE global_inventory SET num_blue_ml = :blueml"),
+        {"blueml": blueml})
+        transaction.commit()
 
     return "OK"
-
 # Gets called once a day
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
     order = []
     print(wholesale_catalog)
-    greenOrder = 0
     with db.engine.begin() as connection:
         greenPot = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar_one()
         redPot = connection.execute(sqlalchemy.text("SELECT num_red_potions FROM global_inventory")).scalar_one()
@@ -88,4 +79,6 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                     "sku": barrel.sku,
                     "quantity": 1,
                 })
+        connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold"),
+        {"gold": gold})
     return order
