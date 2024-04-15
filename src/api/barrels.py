@@ -32,13 +32,13 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
             gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
             
             for barrel in barrels_delivered:
-                if barrel.potion_type == [0, 100, 0, 0]:
+                if barrel.potion_type == [0, 1, 0, 0]:
                     greenml += barrel.ml_per_barrel * barrel.quantity
                     gold -= barrel.price.quantity
-                elif barrel.potion_type == [100, 0, 0, 0]:
+                elif barrel.potion_type == [1, 0, 0, 0]:
                     redml += barrel.ml_per_barrel * barrel.quantity
                     gold -= barrel.price.quantity
-                elif barrel.potion_type == [0, 0, 100, 0]:
+                elif barrel.potion_type == [0, 0, 1, 0]:
                     blueml += barrel.ml_per_barrel * barrel.quantity
                     gold -= barrel.price.quantity
                 
@@ -68,21 +68,21 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
 
     for barrel in wholesale_catalog:
-        if barrel.potion_type == [0, 100, 0, 0]:
+        if barrel.potion_type == [0, 1, 0, 0]:
             if greenPot < 10 and gold > barrel.price:
                 gold -= barrel.price
                 order.append({
                     "sku": barrel.sku,
                     "quantity": 1,
                 })
-        elif barrel.potion_type == [100, 0, 0, 0]:
+        elif barrel.potion_type == [1, 0, 0, 0]:
             if redPot < 10 and gold > barrel.price:
                 gold -= barrel.price
                 order.append({
                     "sku": barrel.sku,
                     "quantity": 1,
                 })
-        elif barrel.potion_type == [0, 0, 100, 0]:
+        elif barrel.potion_type == [0, 0, 1, 0]:
             if bluePot < 10 and gold > barrel.price:
                 gold -= barrel.price
                 order.append({
