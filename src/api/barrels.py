@@ -27,14 +27,18 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         greenml = transaction.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
         redml = transaction.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
         blueml = transaction.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one()
+        gold = transaction.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
         
         for barrel in barrels_delivered:
             if barrel.potion_type == [0, 1, 0, 0]:
                 greenml += barrel.ml_per_barrel * barrel.quantity
+                gold -= barrel.price*barrel.quantity
             elif barrel.potion_type == [1, 0, 0, 0]:
                 redml += barrel.ml_per_barrel * barrel.quantity
+                gold -= barrel.price*barrel.quantity
             elif barrel.potion_type == [0, 0, 1, 0]:
                 blueml += barrel.ml_per_barrel * barrel.quantity
+                gold -= barrel.price*barrel.quantity
             
         transaction.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = :greenml"),
         {"greenml": greenml})
@@ -42,8 +46,8 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         {"redml": redml})
         transaction.execute(sqlalchemy.text("UPDATE global_inventory SET num_blue_ml = :blueml"),
         {"blueml": blueml})
-        transaction.commit()
-
+        transaction.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold"),
+        {"gold": gold})
     return "OK"
 # Gets called once a day
 @router.post("/plan")
@@ -79,6 +83,6 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                     "sku": barrel.sku,
                     "quantity": 1,
                 })
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold"),
-        {"gold": gold})
+
+        
     return order

@@ -142,9 +142,6 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             {"Rpotions": Rpotions})
         connection.execute("UPDATE global_inventory SET num_blue_potions = :Bpotions", 
             {"Bpotions": Bpotions})
-        
-        connection.commit()
-        
     if(potionsBought > 0):
         return {"total_potions_bought": potionsBought, "total_gold_paid": payment}
     else:
