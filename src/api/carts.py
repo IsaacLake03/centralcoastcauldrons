@@ -4,6 +4,7 @@ from src.api import auth
 from enum import Enum
 import sqlalchemy
 from src import database as db
+from typing import Dict
 
 router = APIRouter(
     prefix="/carts",
@@ -87,19 +88,21 @@ def post_visits(visit_id: int, customers: list[Customer]):
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
-    return {"cart_id": 1}
+    cart_id = len(cart_ids)+1
+    cart_ids[cart_id] = {}
+    return {"cart_id": cart_id}
 
 
 class CartItem(BaseModel):
     quantity: int
 
+cart_ids: Dict[int, Dict[str, int]] = {}
 
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
-
+    cart_ids[cart_id][item_sku] = cart_item.quantity
     return "OK"
-
 
 class CartCheckout(BaseModel):
     payment: str
@@ -109,17 +112,40 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
     with db.engine.begin() as connection:
         gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
-
-        potions = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar_one()
-        if(cart_checkout.payment > 0):
-            potions -=1
-            gold +=cart_checkout.payment
-            connection.execute(
-                sqlalchemy.text("UPDATE global_inventory SET gold = :gold"),
-                {"gold": gold})
-            connection.execute(
-                sqlalchemy.text("UPDATE global_inventory SET num_green_potions = :potions"),
-                {"potions": potions})
-            return {"total_potions_bought": 1, "total_gold_paid": 50}
+        Gpotions = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar_one()
+        Rpotions = connection.execute(sqlalchemy.text("SELECT num_red_potions FROM global_inventory")).scalar_one()
+        Bpotions = connection.execute(sqlalchemy.text("SELECT num_blue_potions FROM global_inventory")).scalar_one()
+        payment = 0
+        potionsBought = 0
         
-    return []
+        if "GREEN_POTION_1" in cart_ids[cart_id]:
+            payment += cart_ids[cart_id]["GREEN_POTION_1"]*50
+            Gpotions -= cart_ids[cart_id]["GREEN_POTION_1"]
+            potionsBought += cart_ids[cart_id]["GREEN_POTION_1"]
+            
+        if "RED_POTION_0" in cart_ids[cart_id]:
+            payment += cart_ids[cart_id]["RED_POTION_0"]*50
+            Rpotions -= cart_ids[cart_id]["RED_POTION_0"]
+            potionsBought += cart_ids[cart_id]["RED_POTION_0"]
+    
+        if "BLUE_POTION_2" in cart_ids[cart_id]:
+            payment += cart_ids[cart_id]["BLUE_POTION_2"]*50
+            Bpotions -= cart_ids[cart_id]["BLUE_POTION_2"]
+            potionsBought += cart_ids[cart_id]["BLUE_POTION_2"]
+        
+        connection.execute(
+            sqlalchemy.text("UPDATE global_inventory SET gold = :gold"),
+            {"gold": gold + payment})
+        connection.execute("UPDATE global_inventory SET num_green_potions = :Gpotions", 
+            {"Gpotions": Gpotions})
+        connection.execute("UPDATE global_inventory SET num_red_potions = :Rpotions", 
+            {"Rpotions": Rpotions})
+        connection.execute("UPDATE global_inventory SET num_blue_potions = :Bpotions", 
+            {"Bpotions": Bpotions})
+        
+        connection.commit()
+        
+    if(potionsBought > 0):
+        return {"total_potions_bought": potionsBought, "total_gold_paid": payment}
+    else:
+        return []
