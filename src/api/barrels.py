@@ -28,6 +28,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         redml = transaction.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
         blueml = transaction.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one()
         gold = transaction.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
+        darkml = transaction.execute(sqlalchemy.text("SELECT num_dark_ml FROM global_inventory")).scalar_one()
         
         for barrel in barrels_delivered:
             if barrel.potion_type == [0, 1, 0, 0]:
@@ -39,15 +40,23 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
             elif barrel.potion_type == [0, 0, 1, 0]:
                 blueml += barrel.ml_per_barrel * barrel.quantity
                 gold -= barrel.price*barrel.quantity
-            
-        transaction.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = :greenml"),
-        {"greenml": greenml})
-        transaction.execute(sqlalchemy.text("UPDATE global_inventory SET num_red_ml = :redml"),
-        {"redml": redml})
-        transaction.execute(sqlalchemy.text("UPDATE global_inventory SET num_blue_ml = :blueml"),
-        {"blueml": blueml})
-        transaction.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold"),
-        {"gold": gold})
+            elif barrel.potion_type == [0, 0, 0, 1]:
+                darkml += barrel.ml_per_barrel * barrel.quantity
+                gold -= barrel.price*barrel.quantity
+            else:
+                raise Exception("Invalid potion type")
+
+        transaction.execute(sqlalchemy.text(
+            """"
+            UPDATE global_inventory SET 
+            num_dark_ml = :darkml
+            nunm_green_ml = :greenml
+            num_red_ml = :redml
+            num_blue_ml = :blueml
+            """),
+            {"darkml": darkml, "greenml": greenml, "redml": redml, "blueml": blueml}
+        )
+        
     return "OK"
 # Gets called once a day
 @router.post("/plan")

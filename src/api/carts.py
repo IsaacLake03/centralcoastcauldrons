@@ -12,6 +12,8 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
+cart_ids: Dict[int, Dict[str, int]] = {}
+
 class search_sort_options(str, Enum):
     customer_name = "customer_name"
     item_sku = "item_sku"
@@ -96,13 +98,13 @@ def create_cart(new_cart: Customer):
 class CartItem(BaseModel):
     quantity: int
 
-cart_ids: Dict[int, Dict[str, int]] = {}
+
 
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
     cart_ids[cart_id][item_sku] = cart_item.quantity
-    return "OK"
+    return cart_ids[cart_id][item_sku]
 
 class CartCheckout(BaseModel):
     payment: str
@@ -110,6 +112,9 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
+    if cart_id not in cart_ids:
+        return []
+
     with db.engine.begin() as connection:
         gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
         Gpotions = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar_one()
@@ -132,16 +137,22 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             payment += cart_ids[cart_id]["BLUE_POTION_2"]*50
             Bpotions -= cart_ids[cart_id]["BLUE_POTION_2"]
             potionsBought += cart_ids[cart_id]["BLUE_POTION_2"]
-        
+
+    print("Payment: ", payment, "Gold: ", gold, "Gpotions: ", Gpotions, "Rpotions: ", Rpotions, "Bpotions: ", Bpotions)
+    
+    gold += payment
+    with db.engine.begin() as connection:
         connection.execute(
-            sqlalchemy.text("UPDATE global_inventory SET gold = :gold"),
-            {"gold": gold + payment})
-        connection.execute("UPDATE global_inventory SET num_green_potions = :Gpotions", 
-            {"Gpotions": Gpotions})
-        connection.execute("UPDATE global_inventory SET num_red_potions = :Rpotions", 
-            {"Rpotions": Rpotions})
-        connection.execute("UPDATE global_inventory SET num_blue_potions = :Bpotions", 
-            {"Bpotions": Bpotions})
+            sqlalchemy.text(
+                """
+                UPDATE global_inventory SET 
+                gold = :gold,
+                num_green_potions = :Gpotions,
+                num_red_potions = :Rpotions,
+                num_blue_potions = :Bpotions
+                """),
+        {"gold": gold, "Gpotions": Gpotions, "Rpotions": Rpotions, "Bpotions": Bpotions})
+    
     if(potionsBought > 0):
         return {"total_potions_bought": potionsBought, "total_gold_paid": payment}
     else:
