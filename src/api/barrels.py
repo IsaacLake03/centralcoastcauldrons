@@ -47,14 +47,14 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
                 raise Exception("Invalid potion type")
 
         transaction.execute(sqlalchemy.text(
-            """"
+            """
             UPDATE global_inventory SET 
-            num_dark_ml = :darkml
-            nunm_green_ml = :greenml
-            num_red_ml = :redml
-            num_blue_ml = :blueml
+            num_green_ml = :greenml,
+            num_red_ml = :redml,
+            num_blue_ml = :blueml,
+            gold = :gold
             """),
-            {"darkml": darkml, "greenml": greenml, "redml": redml, "blueml": blueml}
+            {"darkml": darkml, "greenml": greenml, "redml": redml, "blueml": blueml, "gold": gold}
         )
         
     return "OK"
