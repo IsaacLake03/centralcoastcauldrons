@@ -15,13 +15,15 @@ router = APIRouter(
 def get_inventory():
     """ """
     with db.engine.begin() as connection:
-        Pots = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar_one()
+        Pots = 0
         ml = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
-        Pots += connection.execute(sqlalchemy.text("SELECT num_red_potions FROM global_inventory")).scalar_one()
         ml += connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
-        Pots += connection.execute(sqlalchemy.text("SELECT num_blue_potions FROM global_inventory")).scalar_one()
         ml += connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one()
+        ml += connection.execute(sqlalchemy.text("SELECT num_dark_ml FROM global_inventory")).scalar_one()
         gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
+        potions = connection.execute(sqlalchemy.text("SELECT * FROM potions")).fetchall()
+        for potion in potions:
+            Pots += potion.quantity
 
     
     return {"number_of_potions": Pots, "ml_in_barrels": ml, "gold": gold}

@@ -65,28 +65,36 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     order = []
     print(wholesale_catalog)
     with db.engine.begin() as connection:
-        greenPot = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar_one()
-        redPot = connection.execute(sqlalchemy.text("SELECT num_red_potions FROM global_inventory")).scalar_one()
-        bluePot = connection.execute(sqlalchemy.text("SELECT num_blue_potions FROM global_inventory")).scalar_one()
+        redml = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
+        greenml = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
+        blueml = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one()
+        darkml = connection.execute(sqlalchemy.text("SELECT num_dark_ml FROM global_inventory")).scalar_one()
         gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
 
     for barrel in wholesale_catalog:
         if barrel.potion_type == [0, 1, 0, 0]:
-            if greenPot < 10 and gold > barrel.price:
+            if greenml < 100 and gold > barrel.price:
                 gold -= barrel.price
                 order.append({
                     "sku": barrel.sku,
                     "quantity": 1,
                 })
         elif barrel.potion_type == [1, 0, 0, 0]:
-            if redPot < 10 and gold > barrel.price:
+            if redml < 100 and gold > barrel.price:
                 gold -= barrel.price
                 order.append({
                     "sku": barrel.sku,
                     "quantity": 1,
                 })
         elif barrel.potion_type == [0, 0, 1, 0]:
-            if bluePot < 10 and gold > barrel.price:
+            if blueml < 100 and gold > barrel.price:
+                gold -= barrel.price
+                order.append({
+                    "sku": barrel.sku,
+                    "quantity": 1,
+                })
+        elif barrel.potion_type == [0, 0, 0, 1]:
+            if darkml < 100 and gold > barrel.price:
                 gold -= barrel.price
                 order.append({
                     "sku": barrel.sku,
