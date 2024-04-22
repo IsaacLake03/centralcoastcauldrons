@@ -5,7 +5,6 @@ from enum import Enum
 import sqlalchemy
 from src import database as db
 from typing import Dict
-from info import Timestamp
 
 router = APIRouter(
     prefix="/carts",
