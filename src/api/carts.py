@@ -5,14 +5,13 @@ from enum import Enum
 import sqlalchemy
 from src import database as db
 from typing import Dict
+from info import Timestamp
 
 router = APIRouter(
     prefix="/carts",
     tags=["cart"],
     dependencies=[Depends(auth.get_api_key)],
 )
-
-cart_ids: Dict[int, Dict[str, int]] = {}
 
 class search_sort_options(str, Enum):
     customer_name = "customer_name"
@@ -90,8 +89,24 @@ def post_visits(visit_id: int, customers: list[Customer]):
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
-    cart_id = len(cart_ids)+1
-    cart_ids[cart_id] = {}
+    with db.engine.begin() as connection:
+        connection.execute(sqlalchemy.text(
+                        """
+                        INSERT INTO customers (name, class, level) 
+                        VALUES (:customer_name, :character_class, :level)
+                        ON CONFLICT (name, class, level) DO NOTHING
+                        """), 
+                        {"customer_name": new_cart.customer_name, "character_class": new_cart.character_class, "level":new_cart.level})
+        cust_id = connection.execute(sqlalchemy.text("SELECT id FROM customers WHERE name = :customer_name AND class = :character_class AND level = :level"),
+                        {"customer_name": new_cart.customer_name, "character_class": new_cart.character_class, "level":new_cart.level}).scalar_one()
+        
+        cart_id = connection.execute(sqlalchemy.text(
+                        """
+                        INSERT INTO carts (customer_id) 
+                        VALUES (:customer_id)
+                        RETURNING id
+                        """),
+                        {"customer_id": cust_id}).scalar_one()
     return {"cart_id": cart_id}
 
 
@@ -103,8 +118,16 @@ class CartItem(BaseModel):
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
-    cart_ids[cart_id][item_sku] = cart_item.quantity
-    return cart_ids[cart_id][item_sku]
+    with db.engine.begin() as connection:
+
+        connection.execute(sqlalchemy.text(
+                    """
+                    INSERT INTO cart_items (cart_id, item_sku, item_qty)
+                    VALUES (:cart_id, :sku, :quantity)
+                    ON CONFLICT (cart_id, item_sku) DO UPDATE SET item_qty = :quantity
+                    """),
+                    {"cart_id": cart_id, "sku": item_sku, "quantity": cart_item.quantity})
+    return cart_id
 
 class CartCheckout(BaseModel):
     payment: str
@@ -112,33 +135,23 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
-    if cart_id not in cart_ids:
-        return []
 
     with db.engine.begin() as connection:
         gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
-        Gpotions = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar_one()
-        Rpotions = connection.execute(sqlalchemy.text("SELECT num_red_potions FROM global_inventory")).scalar_one()
-        Bpotions = connection.execute(sqlalchemy.text("SELECT num_blue_potions FROM global_inventory")).scalar_one()
+        cart = connection.execute(sqlalchemy.text("SELECT * FROM cart_items WHERE cart_id = :cart_id"), {"cart_id": cart_id}).fetchall()
         payment = 0
         potionsBought = 0
         
-        if "GREEN_POTION_1" in cart_ids[cart_id]:
-            payment += cart_ids[cart_id]["GREEN_POTION_1"]*50
-            Gpotions -= cart_ids[cart_id]["GREEN_POTION_1"]
-            potionsBought += cart_ids[cart_id]["GREEN_POTION_1"]
-            
-        if "RED_POTION_0" in cart_ids[cart_id]:
-            payment += cart_ids[cart_id]["RED_POTION_0"]*50
-            Rpotions -= cart_ids[cart_id]["RED_POTION_0"]
-            potionsBought += cart_ids[cart_id]["RED_POTION_0"]
-    
-        if "BLUE_POTION_2" in cart_ids[cart_id]:
-            payment += cart_ids[cart_id]["BLUE_POTION_2"]*50
-            Bpotions -= cart_ids[cart_id]["BLUE_POTION_2"]
-            potionsBought += cart_ids[cart_id]["BLUE_POTION_2"]
+        for item in cart:
+            potion = connection.execute(sqlalchemy.text("SELECT * FROM potions WHERE potion_sku = :sku"), {"sku": item.item_sku}).fetchone()
+            payment += potion.price * item.item_qty
+            potionsBought += item.item_qty
+            potionqty = potion.quantity
+            potionqty -= item.item_qty
+            connection.execute(sqlalchemy.text("UPDATE potions SET quantity = :quantity WHERE potion_sku = :sku"), {"quantity": potionqty, "sku": item.item_sku})
 
-    print("Payment: ", payment, "Gold: ", gold, "Gpotions: ", Gpotions, "Rpotions: ", Rpotions, "Bpotions: ", Bpotions)
+    print("Payment: ", payment, "Payment type: ", cart_checkout.payment)
+    
     
     gold += payment
     with db.engine.begin() as connection:
@@ -146,12 +159,9 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             sqlalchemy.text(
                 """
                 UPDATE global_inventory SET 
-                gold = :gold,
-                num_green_potions = :Gpotions,
-                num_red_potions = :Rpotions,
-                num_blue_potions = :Bpotions
+                gold = :gold
                 """),
-        {"gold": gold, "Gpotions": Gpotions, "Rpotions": Rpotions, "Bpotions": Bpotions})
+        {"gold": gold})
     
     if(potionsBought > 0):
         return {"total_potions_bought": potionsBought, "total_gold_paid": payment}

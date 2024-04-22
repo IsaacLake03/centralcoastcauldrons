@@ -17,16 +17,13 @@ def reset():
     inventory, and all barrels are removed from inventory. Carts are all reset.
     """
     with db.engine.begin() as connection:
-        potions = connection.execute(sqlalchemy.text("SELECT * FROM potions")).fetchall()
-        for potion in potions:
-            connection.execute(
+
+        connection.execute(
                 sqlalchemy.text(
                     """
                     UPDATE potions SET
                     quantity = 0
-                    WHERE id = :potion_id
-                    """),
-                {"potion_id": potion.id})
+                    """))
         connection.execute(
             sqlalchemy.text(
                 """
