@@ -29,7 +29,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         for potion in potions_delivered:
             for pot in potions:
                 if pot.red == potion.potion_type[0] and pot.green == potion.potion_type[1] and pot.blue == potion.potion_type[2] and pot.dark == potion.potion_type[3]:
-                    updated_quantities[pot.id] = pot.quantity + potion.quantity if pot.quantity else potion.quantity
+                    updated_quantities[pot.id] = pot.quantity + potion.quantity
                     greenml -= potion.quantity * pot.green
                     redml -= potion.quantity * pot.red
                     blueml -= potion.quantity * pot.blue
@@ -81,25 +81,27 @@ def get_bottle_plan():
         i=0
         ml=darkml + greenml + redml + blueml
 
-    while ml >= 200:
+
+    increments = {potion.id: 0 for potion in potions}
+
+    while ml >= 100:
         for potion in potions:
-            if potion.quantity<=i and potion.red<=redml and potion.green<=greenml and potion.blue<=blueml and potion.dark<=darkml:
-                potion.increment+=1
-                darkml-=potion.dark
-                greenml-=potion.green
-                redml-=potion.red
-                blueml-=potion.blue
-                i+=1
-                ml-=100
+            if potion.quantity <= increments[potion.id] and potion.red <= redml and potion.green <= greenml and potion.blue <= blueml and potion.dark <= darkml:
+                increments[potion.id] += 1
+                darkml -= potion.dark
+                greenml -= potion.green
+                redml -= potion.red
+                blueml -= potion.blue
+                ml -= 100
                 break
-        
+
     for potion in potions:
-        if(potion.increment>=1):
+        if increments[potion.id] >= 1:
             order.append({
                 "potion_type": [potion.red, potion.green, potion.blue, potion.dark],
-                "quantity": potion.increment,
+                "quantity": increments[potion.id],
             })
-            potion.increment=0
+        increments[potion.id] = 0
             
     return order
 
