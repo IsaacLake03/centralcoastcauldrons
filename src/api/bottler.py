@@ -19,11 +19,8 @@ class PotionInventory(BaseModel):
 def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int):
     print(f"potions delivered: {potions_delivered} order_id: {order_id}")
     with db.engine.begin() as connection:
-        greenml = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
-        redml = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
-        blueml = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one()
-        darkml = connection.execute(sqlalchemy.text("SELECT num_dark_ml FROM global_inventory")).scalar_one()
-        potions = connection.execute(sqlalchemy.text("SELECT * FROM potions")).fetchall()
+        greenml, redml, blueml, darkml = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_red_ml, num_blue_ml, num_dark_ml FROM global_inventory")).first()
+        potions = connection.execute(sqlalchemy.text("SELECT quantity, green, red, blue, dark, id FROM potions")).fetchall()
 
         updated_quantities = {}
         for potion in potions_delivered:
@@ -73,13 +70,13 @@ def get_bottle_plan():
     
     order = []
     with db.engine.begin() as connection:
-        inventory = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory")).fetchall()
-        greenml = inventory[0].num_green_ml
-        redml = inventory[0].num_red_ml
-        blueml = inventory[0].num_blue_ml
-        darkml = inventory[0].num_dark_ml
-        potions = connection.execute(sqlalchemy.text("SELECT * FROM potions")).fetchall()
-        ml=darkml + greenml + redml + blueml
+        greenml, redml, blueml, darkml, potion_cap = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_red_ml, num_blue_ml, num_dark_ml, potion_cap FROM global_inventory")).first()
+        potions = connection.execute(sqlalchemy.text("SELECT red, green, blue, dark, id, quantity FROM potions")).fetchall()
+        potionqty = 0
+        for potion in potions:
+            potionqty += potion.quantity
+            
+        ml = darkml + greenml + redml + blueml
 
 
     increments = {potion.id: 0 for potion in potions}
@@ -88,26 +85,29 @@ def get_bottle_plan():
     while ml >= 100 and run:
         run = False
         for potion in potions:
-            if potion.quantity <= increments[potion.id] and potion.red <= redml and potion.green <= greenml and potion.blue <= blueml and potion.dark <= darkml:
-                increments[potion.id] += 1
-                darkml -= potion.dark
-                greenml -= potion.green
-                redml -= potion.red
-                blueml -= potion.blue
-                ml -= 100
-                run = True
-                break
-    if ml>=100:
-        while ml >= 100:
-            for potion in potions:
-                if potion.red <= redml and potion.green <= greenml and potion.blue <= blueml and potion.dark <= darkml:
+            if(potionqty<potion_cap):
+                if potion.quantity <= increments[potion.id] and potion.red <= redml and potion.green <= greenml and potion.blue <= blueml and potion.dark <= darkml:
                     increments[potion.id] += 1
+                    potionqty +=1
                     darkml -= potion.dark
                     greenml -= potion.green
                     redml -= potion.red
                     blueml -= potion.blue
                     ml -= 100
+                    run = True
                     break
+    if ml>=100:
+        while ml >= 100:
+            for potion in potions:
+                if(potionqty<potion_cap):
+                    if potion.red <= redml and potion.green <= greenml and potion.blue <= blueml and potion.dark <= darkml:
+                        increments[potion.id] += 1
+                        darkml -= potion.dark
+                        greenml -= potion.green
+                        redml -= potion.red
+                        blueml -= potion.blue
+                        ml -= 100
+                        break
 
     for potion in potions:
         if increments[potion.id] >= 1:

@@ -65,61 +65,61 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     order = []
     print(wholesale_catalog)
     with db.engine.begin() as connection:
-        redml = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
-        greenml = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
-        blueml = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one()
-        darkml = connection.execute(sqlalchemy.text("SELECT num_dark_ml FROM global_inventory")).scalar_one()
-        gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
-        potions = connection.execute(sqlalchemy.text("SELECT * FROM potions")).fetchall()
-        greenpotions = 0
-        redpotions = 0
-        bluepotions = 0
-        darkpotions = 0
-        for potion in potions:
-            if potion.red >= 10:
-                redpotions += potion.quantity*potion.red/10
-            if potion.green >= 10:
-                greenpotions += potion.quantity*potion.green/10
-            if potion.blue >= 10:
-                bluepotions += potion.quantity*potion.blue/10
-            if potion.dark >= 10:
-                darkpotions += potion.quantity*potion.dark/10
+        greenml, blueml, darkml, redml, gold, ml_capacity = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_blue_ml, num_dark_ml, num_red_ml, gold, ml_cap FROM global_inventory")).first()
 
-        while redpotions>15 and greenpotions>15 and bluepotions>15 and darkpotions>15:
-            redpotions-=15
-            greenpotions-=15
-            bluepotions-=15
-            darkpotions-=15
-            
+        wholesale_catalog = sorted(wholesale_catalog, key=lambda barrel: barrel.ml_per_barrel, reverse=True)
+
     for barrel in wholesale_catalog:
         if barrel.potion_type == [0, 1, 0, 0]:
-            if greenml < 100 and gold > barrel.price and greenpotions < 15:
-                gold -= barrel.price
+            cap = ml_capacity/4 - greenml
+            qty = cap // barrel.ml_per_barrel
+            while barrel.price*qty > gold and qty > 0:
+                qty -= 1
+            if qty > 0:
+                gold -= barrel.price*qty
                 order.append({
                     "sku": barrel.sku,
-                    "quantity": 1,
+                    "quantity": qty,
                 })
-        elif barrel.potion_type == [1, 0, 0, 0]:
-            if redml < 100 and gold > barrel.price and redpotions < 15:
-                gold -= barrel.price
-                order.append({
-                    "sku": barrel.sku,
-                    "quantity": 1,
-                })
-        elif barrel.potion_type == [0, 0, 1, 0]:
-            if blueml < 100 and gold > barrel.price and bluepotions < 15:
-                gold -= barrel.price
-                order.append({
-                    "sku": barrel.sku,
-                    "quantity": 1,
-                })
-        elif barrel.potion_type == [0, 0, 0, 1]:
-            if darkml < 100 and gold > barrel.price and darkpotions < 15:
-                gold -= barrel.price
-                order.append({
-                    "sku": barrel.sku,
-                    "quantity": 1,
-                })
+                greenml += barrel.ml_per_barrel * qty
 
-        
+        elif barrel.potion_type == [1, 0, 0, 0]:
+            cap = ml_capacity/4 - redml
+            qty = cap // barrel.ml_per_barrel
+            while barrel.price*qty > gold and qty > 0:
+                qty -= 1
+            if qty > 0:
+                gold -= barrel.price*qty
+                order.append({
+                    "sku": barrel.sku,
+                    "quantity": qty,
+                })
+                redml += barrel.ml_per_barrel * qty
+    
+        elif barrel.potion_type == [0, 0, 1, 0]:
+            cap = ml_capacity/4 - redml
+            qty = cap // barrel.ml_per_barrel
+            while barrel.price*qty > gold and qty > 0:
+                qty -= 1
+            if qty > 0:
+                gold -= barrel.price*qty
+                order.append({
+                    "sku": barrel.sku,
+                    "quantity": qty,
+                })
+                blueml += barrel.ml_per_barrel * qty
+                
+        elif barrel.potion_type == [0, 0, 0, 1]:
+            cap = ml_capacity/4 - redml
+            qty = cap // barrel.ml_per_barrel
+            while barrel.price*qty > gold and qty > 0:
+                qty -= 1
+            if qty > 0:
+                gold -= barrel.price*qty
+                order.append({
+                    "sku": barrel.sku,
+                    "quantity": qty,
+                })
+                darkml += barrel.ml_per_barrel * qty
+
     return order
