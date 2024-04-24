@@ -143,7 +143,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         
         for item in cart:
             potion = connection.execute(sqlalchemy.text("SELECT * FROM potions WHERE potion_sku = :sku"), {"sku": item.item_sku}).fetchone()
-            payment += potion.price * item.item_qty
+            payment += potion.price*item.item_qty
             potionsBought += item.item_qty
             potionqty = potion.quantity
             potionqty -= item.item_qty
