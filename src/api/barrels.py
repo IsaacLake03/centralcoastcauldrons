@@ -72,7 +72,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     for barrel in wholesale_catalog:
         if barrel.potion_type == [0, 1, 0, 0] and barrel.ml_per_barrel > 200:
             cap = ml_capacity/4 - greenml
-            qty = cap // barrel.ml_per_barrel
+            qty = int(cap // barrel.ml_per_barrel)
             while barrel.price*qty > gold and qty > 0:
                 qty -= 1
             if qty > 0:
@@ -85,7 +85,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
         elif barrel.potion_type == [1, 0, 0, 0] and barrel.ml_per_barrel > 200:
             cap = ml_capacity/4 - redml
-            qty = cap // barrel.ml_per_barrel
+            qty = int(cap // barrel.ml_per_barrel)
             while barrel.price*qty > gold and qty > 0:
                 qty -= 1
             if qty > 0:
@@ -98,7 +98,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     
         elif barrel.potion_type == [0, 0, 1, 0] and barrel.ml_per_barrel > 200:
             cap = ml_capacity/4 - redml
-            qty = cap // barrel.ml_per_barrel
+            qty = int(cap // barrel.ml_per_barrel)
             while barrel.price*qty > gold and qty > 0:
                 qty -= 1
             if qty > 0:
@@ -111,7 +111,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                 
         elif barrel.potion_type == [0, 0, 0, 1] and barrel.ml_per_barrel > 200:
             cap = ml_capacity/4 - redml
-            qty = cap // barrel.ml_per_barrel
+            qty = int(cap // barrel.ml_per_barrel)
             while barrel.price*qty > gold and qty > 0:
                 qty -= 1
             if qty > 0:
