@@ -77,14 +77,20 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         darkpotions = 0
         for potion in potions:
             if potion.red >= 10:
-                redpotions += potion.quantity
+                redpotions += potion.quantity*potion.red/10
             if potion.green >= 10:
-                greenpotions += potion.quantity
+                greenpotions += potion.quantity*potion.green/10
             if potion.blue >= 10:
-                bluepotions += potion.quantity
+                bluepotions += potion.quantity*potion.blue/10
             if potion.dark >= 10:
-                darkpotions += potion.quantity
+                darkpotions += potion.quantity*potion.dark/10
 
+        while redpotions>15 and greenpotions>15 and bluepotions>15 and darkpotions>15:
+            redpotions-=15
+            greenpotions-=15
+            bluepotions-=15
+            darkpotions-=15
+            
     for barrel in wholesale_catalog:
         if barrel.potion_type == [0, 1, 0, 0]:
             if greenml < 100 and gold > barrel.price and greenpotions < 15:
