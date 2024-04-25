@@ -67,7 +67,6 @@ def get_bottle_plan():
     # Expressed in integers from 1 to 100 that must sum up to 100.
 
     # Initial logic: bottle all barrels into red potions.
-    
     order = []
     with db.engine.begin() as connection:
         greenml, redml, blueml, darkml, potion_cap = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_red_ml, num_blue_ml, num_dark_ml, potion_cap FROM global_inventory")).first()
@@ -95,9 +94,8 @@ def get_bottle_plan():
                     blueml -= potion.blue
                     ml -= 100
                     run = True
-                    break
     if ml>=100:
-        while ml >= 100:
+        while ml >= 100 and potionqty<potion_cap:
             for potion in potions:
                 if(potionqty<potion_cap):
                     if potion.red <= redml and potion.green <= greenml and potion.blue <= blueml and potion.dark <= darkml:
@@ -107,8 +105,6 @@ def get_bottle_plan():
                         redml -= potion.red
                         blueml -= potion.blue
                         ml -= 100
-                        break
-
     for potion in potions:
         if increments[potion.id] >= 1:
             order.append({
