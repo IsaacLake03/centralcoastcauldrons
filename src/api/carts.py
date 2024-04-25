@@ -134,33 +134,20 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
+    potionsBought = 0
+    payment = 0
 
     with db.engine.begin() as connection:
-        gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
-        cart = connection.execute(sqlalchemy.text("SELECT * FROM cart_items WHERE cart_id = :cart_id"), {"cart_id": cart_id}).fetchall()
-        payment = 0
-        potionsBought = 0
+        cart = connection.execute(sqlalchemy.text("SELECT item_sku, item_qty FROM cart_items WHERE cart_id = :cart_id"), {"cart_id": cart_id}).fetchall()
         
         for item in cart:
-            potion = connection.execute(sqlalchemy.text("SELECT * FROM potions WHERE potion_sku = :sku"), {"sku": item.item_sku}).fetchone()
-            payment += potion.price*item.item_qty
+            price = connection.execute(sqlalchemy.text("SELECT price FROM potions WHERE potion_sku = :sku"), {"sku": item.item_sku}).scalar_one()
+            payment += price*item.item_qty
             potionsBought += item.item_qty
-            potionqty = potion.quantity
-            potionqty -= item.item_qty
-            connection.execute(sqlalchemy.text("UPDATE potions SET quantity = :quantity WHERE potion_sku = :sku"), {"quantity": potionqty, "sku": item.item_sku})
+            connection.execute(sqlalchemy.text("INSERT INTO ledger (item_sku, change) VALUES (:sku, :change)"), {"sku": item.item_sku, "change": -(item.item_qty)})
+            connection.execute(sqlalchemy.text("INSERT INTO ledger (item_sku, change) VALUES ('gold', :change)"), {"change": price*item.item_qty})
 
     print("Payment: ", payment, "Payment type: ", cart_checkout.payment)
-    
-    
-    gold += payment
-    with db.engine.begin() as connection:
-        connection.execute(
-            sqlalchemy.text(
-                """
-                UPDATE global_inventory SET 
-                gold = :gold
-                """),
-        {"gold": gold})
     
     if(potionsBought > 0):
         return {"total_potions_bought": potionsBought, "total_gold_paid": payment}

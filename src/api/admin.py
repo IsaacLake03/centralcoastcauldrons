@@ -29,22 +29,27 @@ def reset():
                 DELETE FROM cart_items
                 """))
         connection.execute(
-                sqlalchemy.text(
-                    """
-                    UPDATE potions SET
-                    quantity = 0
-                    """))
+            sqlalchemy.text(
+                """
+                DELETE FROM ledger
+                """))
         connection.execute(
             sqlalchemy.text(
                 """
-                UPDATE global_inventory SET 
-                gold = 100,
-                num_dark_ml = 0,
-                num_green_ml = 0,
-                num_red_ml = 0,
-                num_blue_ml = 0,
-                potion_cap = 50,
-                ml_cap = 10000
+                INSERT INTO ledger (item_sku, change)
+                VALUES ('gold', 100)
+                """))
+        connection.execute(
+            sqlalchemy.text(
+                """
+                INSERT INTO ledger (item_sku, change)
+                VALUES ('cap_mils', 10000)
+                """))
+        connection.execute(
+            sqlalchemy.text(
+                """
+                INSERT INTO ledger (item_sku, change)
+                VALUES ('cap_pots', 50)
                 """))
     return "OK"
 

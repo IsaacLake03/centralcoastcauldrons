@@ -15,10 +15,15 @@ router = APIRouter(
 def get_inventory():
     """ """
     with db.engine.begin() as connection:
-        inv = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_blue_ml, num_red_ml, num_dark_ml, gold FROM global_inventory")).first()
-        ml = inv.num_green_ml + inv.num_blue_ml + inv.num_red_ml + inv.num_dark_ml
-        gold = inv.gold
-        potions = connection.execute(sqlalchemy.text("SELECT SUM(quantity) FROM potions")).scalar_one()
+        ml, gold, potions = connection.execute(sqlalchemy.text(
+            """
+            SELECT 
+                SUM(CASE WHEN item_sku LIKE '%ml%' THEN change ELSE 0 END),
+                SUM(CASE WHEN item_sku LIKE '%gold%' THEN change ELSE 0 END),
+                SUM(CASE WHEN item_sku LIKE '%POTION%' THEN change ELSE 0 END)
+            FROM 
+                ledger
+            """)).fetchone()
     return {"number_of_potions": potions, "ml_in_barrels": ml, "gold": gold}
 
 # Gets called once a day
@@ -29,7 +34,14 @@ def get_capacity_plan():
     capacity unit costs 1000 gold.
     """
     with db.engine.begin() as connection:
-        gold, potion_cap = connection.execute(sqlalchemy.text("SELECT gold, potion_cap FROM global_inventory")).scalar_one()
+        gold, potion_cap = connection.execute(sqlalchemy.text(
+            """
+            SELECT 
+                SUM(CASE WHEN item_sku LIKE '%gold%' THEN change ELSE 0 END),
+                SUM(CASE WHEN item_sku LIKE '%cap_pots%' THEN change ELSE 0 END)
+            FROM 
+                ledger
+            """)).fetchone()
     if gold > 2000 and potion_cap < 750:
         return{
             "potion_capacity": 1,
@@ -54,17 +66,25 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
     """
     purchase_price = 1000 * (capacity_purchase.potion_capacity + capacity_purchase.ml_capacity)
     with db.engine.begin() as connection:
-        gold, potion_cap, ml_cap = connection.execute(sqlalchemy.text("SELECT gold, potion_cap, ml_cap FROM global_inventory")).one()
-        gold -= purchase_price
-        potion_cap += 50*capacity_purchase.potion_capacity
-        ml_cap += 10000*capacity_purchase.ml_capacity
         connection.execute(
-                sqlalchemy.text(
-                    """
-                    UPDATE global_inventory SET 
-                    gold = :gold,
-                    potion_cap = :potion_cap,
-                    ml_cap = :ml_cap
-                    """),
-                {"gold": gold, "potion_cap": potion_cap, "ml_cap": ml_cap})
+            sqlalchemy.text(
+                """
+                INSERT INTO ledger (item_sku, change)
+                VALUES ('gold', :gold)
+                """),
+            {"gold": -purchase_price})
+        connection.execute(
+            sqlalchemy.text(
+                """
+                INSERT INTO ledger (item_sku, change)
+                VALUES ('cap_pots', :potion_capacity)
+                """),
+            {"potion_capacity": 50*capacity_purchase.potion_capacity})
+        connection.execute(
+            sqlalchemy.text(
+                """
+                INSERT INTO ledger (item_sku, change)
+                VALUES ('cap_mils', :ml_capacity)
+                """),
+            {"cap_mils": 10000*capacity_purchase.ml_capacity})
         return "OK"

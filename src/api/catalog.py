@@ -13,13 +13,14 @@ def get_catalog():
     #Max of 6 potions
     order = []
     with db.engine.begin() as connection:
-        potions = connection.execute(sqlalchemy.text("SELECT potion_sku, name, quantity, price, red, green, blue, dark FROM potions")).fetchall()
+        potions = connection.execute(sqlalchemy.text("SELECT potion_sku, name, price, red, green, blue, dark FROM potions")).fetchall()
         for potion in potions:
-            if(potion.quantity>=1):
+            quantity = connection.execute(sqlalchemy.text("SELECT SUM(change) FROM ledger WHERE item_sku = :sku"), {"sku": potion.potion_sku}).scalar_one() or 0
+            if(quantity>=1):
                 order.append({
                     "sku": potion.potion_sku,
                     "name": potion.name,
-                    "quantity": potion.quantity,
+                    "quantity": quantity,
                     "price": potion.price,
                     "potion_type": [potion.red, potion.green, potion.blue, potion.dark],
                 })
