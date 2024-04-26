@@ -80,7 +80,13 @@ def get_bottle_plan():
     # Expressed in integers from 1 to 100 that must sum up to 100.
     order = []
     with db.engine.begin() as connection:
-        potions = connection.execute(sqlalchemy.text("SELECT red, green, blue, dark, id FROM potions")).fetchall()
+        potions = connection.execute(sqlalchemy.text("""
+            SELECT p.red, p.green, p.blue, p.dark, p.potion_sku, p.id, SUM(l.change) as quantity
+            FROM potions p
+            LEFT JOIN ledger l ON p.potion_sku = l.item_sku
+            GROUP BY p.id
+            ORDER BY quantity DESC
+        """)).fetchall()
         potionqty, potion_cap, greenml, redml, blueml, darkml = connection.execute(sqlalchemy.text("""
             SELECT 
                 SUM(CASE WHEN item_sku LIKE '%POTION%' THEN change ELSE 0 END),
@@ -96,22 +102,7 @@ def get_bottle_plan():
 
 
     increments = {potion.id: 0 for potion in potions}
-    run = True
 
-    while ml >= 100 and run and potionqty<potion_cap:
-        run = False
-        for potion in potions:
-            if(potionqty<potion_cap):
-                if potion.quantity <= increments[potion.id] and potion.red <= redml and potion.green <= greenml and potion.blue <= blueml and potion.dark <= darkml:
-                    increments[potion.id] += 1
-                    potionqty +=1
-                    print(potionqty, potion_cap)
-                    darkml -= potion.dark
-                    greenml -= potion.green
-                    redml -= potion.red
-                    blueml -= potion.blue
-                    ml -= 100
-                    run = True
     while ml >= 100 and potionqty<potion_cap:
         for potion in potions:
             if(potionqty<potion_cap):
@@ -130,8 +121,6 @@ def get_bottle_plan():
                 "quantity": increments[potion.id],
             })
         increments[potion.id] = 0
-            
-    print(potionqty, potion_cap)
     return order
 
 if __name__ == "__main__":
