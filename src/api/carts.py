@@ -139,6 +139,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
 
     with db.engine.begin() as connection:
         cart = connection.execute(sqlalchemy.text("SELECT item_sku, item_qty FROM cart_items WHERE cart_id = :cart_id"), {"cart_id": cart_id}).fetchall()
+        day = connection.execute(sqlalchemy.text("SELECT day FROM current_day")).scalar_one()
         
         for item in cart:
             price = connection.execute(sqlalchemy.text("SELECT price FROM potions WHERE potion_sku = :sku"), {"sku": item.item_sku}).scalar_one()
