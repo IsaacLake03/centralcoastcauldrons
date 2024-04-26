@@ -80,7 +80,7 @@ def get_bottle_plan():
     # Expressed in integers from 1 to 100 that must sum up to 100.
     order = []
     with db.engine.begin() as connection:
-        potions = connection.execute(sqlalchemy.text("SELECT red, green, blue, dark, id, quantity FROM potions")).fetchall()
+        potions = connection.execute(sqlalchemy.text("SELECT red, green, blue, dark, id FROM potions")).fetchall()
         potionqty, potion_cap, greenml, redml, blueml, darkml = connection.execute(sqlalchemy.text("""
             SELECT 
                 SUM(CASE WHEN item_sku LIKE '%POTION%' THEN change ELSE 0 END),
