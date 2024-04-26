@@ -23,10 +23,10 @@ def post_time(timestamp: Timestamp):
         connection.execute(
             sqlalchemy.text(
                 """
-                UPDATE SET
+                UPDATE current_time
+                SET
                 day = :day,
-                hour = :hour,
-                FROM current_time
+                hour = :hour
                 """
             ),
             {"day": timestamp.day, "hour": timestamp.hour}
