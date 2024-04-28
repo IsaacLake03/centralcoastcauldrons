@@ -86,5 +86,5 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
                 INSERT INTO ledger (item_sku, change)
                 VALUES ('cap_mils', :ml_capacity)
                 """),
-            {"cap_mils": 10000*capacity_purchase.ml_capacity})
+            {"ml_capacity": 10000*capacity_purchase.ml_capacity})
         return "OK"
