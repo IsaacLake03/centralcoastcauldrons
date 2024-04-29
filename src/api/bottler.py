@@ -85,7 +85,7 @@ def get_bottle_plan():
             FROM potions p
             LEFT JOIN ledger l ON p.potion_sku = l.item_sku
             GROUP BY p.id
-            ORDER BY quantity DESC
+            ORDER BY quantity ASC
         """)).fetchall()
         potionqty, potion_cap, greenml, redml, blueml, darkml = connection.execute(sqlalchemy.text("""
             SELECT 
