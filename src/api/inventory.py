@@ -34,17 +34,23 @@ def get_capacity_plan():
     capacity unit costs 1000 gold.
     """
     with db.engine.begin() as connection:
-        gold, potion_cap = connection.execute(sqlalchemy.text(
+        gold, potion_cap, ml_cap = connection.execute(sqlalchemy.text(
             """
             SELECT 
                 SUM(CASE WHEN item_sku LIKE '%gold%' THEN change ELSE 0 END),
-                SUM(CASE WHEN item_sku LIKE '%cap_pots%' THEN change ELSE 0 END)
+                SUM(CASE WHEN item_sku LIKE '%cap_pots%' THEN change ELSE 0 END),
+                SUM(CASE WHEN item_sku LIKE '%cap_mils%' THEN change ELSE 0 END)
             FROM 
                 ledger
             """)).fetchone()
-    if gold > 3000 and potion_cap < 750:
+    if gold > 2000:
+        if(potion_cap < (ml_cap/100)):
+            return{
+                "potion_capacity": 1,
+                "ml_capacity": 0
+            }
         return{
-            "potion_capacity": 1,
+            "potion_capacity": 0,
             "ml_capacity": 1
         }
 
