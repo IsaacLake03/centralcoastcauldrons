@@ -125,7 +125,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
             connection.execute(sqlalchemy.text(
                 """
                 UPDATE potions
-                SET price = base_price * 0.9
+                SET price = 40
                 """))
         else:
             connection.execute(sqlalchemy.text(
