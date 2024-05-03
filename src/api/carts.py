@@ -54,6 +54,24 @@ def search_orders(
     Your results must be paginated, the max results you can return at any
     time is 5 total line items.
     """
+    query = """
+        SELECT cartItems.line_item_id, cartItems.item_sku, cart.customer_id, cust.name, cust.class, cust.level, cartItems.line_item_total, cartItems.timestamp
+        FROM cart_items cartItems
+        JOIN carts cart ON cartItems.cart_id = cart.id
+        JOIN customers cust ON cart.customer_id = cust.id
+    """
+    """params = {}
+    if customer_name is not None:
+        query += " WHERE cust.name = :name"
+        params["name"] = customer_name
+    if potion_sku is not None:
+        query += " AND cartItems.item_sku = :item_sku" if "WHERE" in query else " WHERE cartItems.item_sku = :item_sku"
+        params["item_sku"] = potion_sku
+
+    query += " ORDER BY cartItems.date DESC LIMIT 5"
+
+    with db.engine.begin() as connection:
+        results = connection.execute(sqlalchemy.text(query), params).fetchall()"""
 
     return {
         "previous": "",
@@ -80,6 +98,17 @@ def post_visits(visit_id: int, customers: list[Customer]):
     """
     Which customers visited the shop today?
     """
+    with db.engine.begin() as connection:
+        day = connection.execute(sqlalchemy.text("SELECT day FROM current_day")).scalar_one()
+        customerVisits = [customer.customer_name for customer in customers]
+        connection.execute(sqlalchemy.text(
+            f"""
+            UPDATE customers
+            SET "{day}" = "{day}" + 1
+            WHERE name IN :customerVisits
+            """
+        ), {"customerVisits": tuple(customerVisits)})
+
     print(customers)
 
     return "OK"
