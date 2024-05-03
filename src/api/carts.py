@@ -54,37 +54,64 @@ def search_orders(
     Your results must be paginated, the max results you can return at any
     time is 5 total line items.
     """
+    result = []
+    previous = ""
     query = """
-        SELECT cartItems.line_item_id, cartItems.item_sku, cart.customer_id, cust.name, cust.class, cust.level, cartItems.line_item_total, cartItems.timestamp
+        SELECT cartItems.item_sku, cart.customer_id, cust.name, cust.class, cust.level, cartItems.item_qty, cartItems.date AS timestamp, pot.id AS potion_id
         FROM cart_items cartItems
         JOIN carts cart ON cartItems.cart_id = cart.id
         JOIN customers cust ON cart.customer_id = cust.id
+        JOIN potions pot ON cartItems.item_sku = pot.potion_sku
     """
-    """params = {}
-    if customer_name is not None:
+    params = {}
+    if customer_name != "":
         query += " WHERE cust.name = :name"
         params["name"] = customer_name
-    if potion_sku is not None:
+
+    if potion_sku != "":
         query += " AND cartItems.item_sku = :item_sku" if "WHERE" in query else " WHERE cartItems.item_sku = :item_sku"
         params["item_sku"] = potion_sku
+        
+    if search_page is None:
+        search_page = 1
+    
+    params["page"] = search_page
+    
+    if int(search_page) > 1:
+        previous = str(search_page - 1)
+    if sort_col == "":
+        sort_col = "cartItems.date"
+    if sort_order == "":
+        sort_order = "desc"
+        
+    
 
-    query += " ORDER BY cartItems.date DESC LIMIT 5"
+    query += f" ORDER BY {sort_col} {sort_order} LIMIT 5 OFFSET 5*(:page-1)"
+    
+    print(query)
+    print(params)
 
     with db.engine.begin() as connection:
-        results = connection.execute(sqlalchemy.text(query), params).fetchall()"""
+        results = connection.execute(sqlalchemy.text(query), params).fetchall()
+    
+    for row in results:
+        result.append({
+            "line_item_id": row.potion_id,
+            "item_sku": row.item_sku,
+            "customer_name": row.name,
+            "line_item_total": row.item_qty,
+            "timestamp": row.timestamp,
+        })
+    if len(results) > 5:
+        next = str(search_page + 1)
+    else:
+        next = ""
+    
 
     return {
-        "previous": "",
-        "next": "",
-        "results": [
-            {
-                "line_item_id": 1,
-                "item_sku": "1 oblivion potion",
-                "customer_name": "Scaramouche",
-                "line_item_total": 50,
-                "timestamp": "2021-01-01T00:00:00Z",
-            }
-        ],
+        "previous": previous,
+        "next": next,
+        "results": result,
     }
 
 
@@ -108,6 +135,8 @@ def post_visits(visit_id: int, customers: list[Customer]):
             WHERE name IN :customerVisits
             """
         ), {"customerVisits": tuple(customerVisits)})
+
+    
 
     print(customers)
 
