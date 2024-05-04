@@ -72,12 +72,12 @@ def search_orders(
         query += " AND cartItems.item_sku = :item_sku" if "WHERE" in query else " WHERE cartItems.item_sku = :item_sku"
         params["item_sku"] = potion_sku
         
-    if search_page is None:
-        search_page = 1
+    if not search_page:
+        search_page = "1"
     
     params["page"] = search_page
     
-    if int(search_page) > 1:
+    if search_page and int(search_page) > 1:
         previous = str(search_page - 1)
     if sort_col == "":
         sort_col = "cartItems.date"
