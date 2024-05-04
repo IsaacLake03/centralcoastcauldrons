@@ -82,7 +82,7 @@ def get_bottle_plan():
     with db.engine.begin() as connection:
         gold = connection.execute(sqlalchemy.text("SELECT SUM(change) FROM ledger WHERE item_sku = 'gold'")).scalar_one()
         potions = connection.execute(sqlalchemy.text("""
-            SELECT p.red, p.green, p.blue, p.dark, p.potion_sku, p.id, p.shift, p.lock, SUM(l.change) as quantity
+            SELECT p.red, p.green, p.blue, p.dark, p.potion_sku, p.id, p.lock, SUM(l.change) as quantity
             FROM potions p
             LEFT JOIN ledger l ON p.potion_sku = l.item_sku
             GROUP BY p.id
