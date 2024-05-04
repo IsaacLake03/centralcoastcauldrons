@@ -120,7 +120,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                 ledger
             """)).first()
         
-        if ml_capacity >= 50000:
+        if ml_capacity >= 30000:
             barrelsize = 5000
             connection.execute(sqlalchemy.text(
                 """
