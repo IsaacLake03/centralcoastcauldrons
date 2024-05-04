@@ -80,8 +80,9 @@ def get_bottle_plan():
     # Expressed in integers from 1 to 100 that must sum up to 100.
     order = []
     with db.engine.begin() as connection:
+        gold = connection.execute(sqlalchemy.text("SELECT SUM(change) FROM ledger WHERE item_sku = 'gold'")).scalar_one()
         potions = connection.execute(sqlalchemy.text("""
-            SELECT p.red, p.green, p.blue, p.dark, p.potion_sku, p.id, SUM(l.change) as quantity
+            SELECT p.red, p.green, p.blue, p.dark, p.potion_sku, p.id, p.shift, p.lock, SUM(l.change) as quantity
             FROM potions p
             LEFT JOIN ledger l ON p.potion_sku = l.item_sku
             GROUP BY p.id
@@ -99,6 +100,52 @@ def get_bottle_plan():
                 ledger
             """)).fetchone()
         ml = darkml + greenml + redml + blueml
+        if gold > 100000:
+            for potion in potions:
+                if potion.red == 100 or potion.green == 100 or potion.blue == 100:
+                    if potionqty==0:
+                        if potion.red == 100:
+                            connection.execute(sqlalchemy.text(
+                                """
+                                UPDATE potions
+                                red = 90,
+                                green = 5,
+                                blue = 5,
+                                lock = False
+                                WHERE id = :id 
+                                """
+                            ))
+                        elif potion.green == 100:
+                            connection.execute(sqlalchemy.text(
+                                """
+                                UPDATE potions
+                                red = 5,
+                                green = 90,
+                                blue = 5,
+                                lock = False
+                                WHERE id = :id
+                                """
+                            ))
+                        elif potion.blue == 100:
+                            connection.execute(sqlalchemy.text(
+                                """
+                                UPDATE potions
+                                red = 5,
+                                green = 5,
+                                blue = 90,
+                                lock = False
+                                WHERE id = :id
+                                """
+                            ))
+                    else:
+                        connection.execute(sqlalchemy.text(
+                            """
+                            UPDATE potions
+                            lock = True
+                            WHERE id = :id 
+                            """
+                        ))
+            
 
 
     increments = {potion.id: 0 for potion in potions}
@@ -106,7 +153,7 @@ def get_bottle_plan():
     while ml >= 200 and potionqty<potion_cap:
         for potion in potions:
             if(potionqty<potion_cap):
-                if potion.red <= redml and potion.green <= greenml and potion.blue <= blueml and potion.dark <= darkml:
+                if potion.red <= redml and potion.green <= greenml and potion.blue <= blueml and potion.dark <= darkml and potion.lock == False:
                     increments[potion.id] += 1
                     potionqty +=1
                     darkml -= potion.dark
