@@ -147,7 +147,9 @@ def get_bottle_plan():
                         ))
 
     increments = {potion.id: 0 for potion in potions}
-
+    
+    potionqty+=5
+    
     while ml >= 200 and potionqty<potion_cap:
         for potion in potions:
             if(potionqty<potion_cap):
