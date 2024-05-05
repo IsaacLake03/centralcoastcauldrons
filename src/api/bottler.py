@@ -145,8 +145,6 @@ def get_bottle_plan():
                             WHERE id = :id 
                             """
                         ))
-            
-
 
     increments = {potion.id: 0 for potion in potions}
 
