@@ -55,6 +55,8 @@ def search_orders(
     time is 5 total line items.
     """
     result = []
+
+        
     previous = ""
     query = """
         SELECT cartItems.item_sku, cart.customer_id, cust.name, cust.class, cust.level, cartItems.item_qty, cartItems.date AS timestamp, pot.id AS potion_id
@@ -78,7 +80,7 @@ def search_orders(
     params["page"] = search_page
     
     if search_page and int(search_page) > 1:
-        previous = str(search_page - 1)
+        previous = str(int(search_page) - 1)
     if sort_col == "":
         sort_col = "cartItems.date"
     if sort_order == "":
@@ -88,8 +90,21 @@ def search_orders(
 
     query += f" ORDER BY {sort_col} {sort_order} LIMIT 5 OFFSET 5*(:page-1)"
     
-    print(query)
-    print(params)
+
+    count_query = """
+        SELECT COUNT(*)
+        FROM cart_items cartItems
+        JOIN carts cart ON cartItems.cart_id = cart.id
+        JOIN customers cust ON cart.customer_id = cust.id
+        JOIN potions pot ON cartItems.item_sku = pot.potion_sku
+    """
+    if customer_name != "":
+        count_query += " WHERE cust.name = :name"
+    if potion_sku != "":
+        count_query += " AND cartItems.item_sku = :item_sku" if "WHERE" in count_query else " WHERE cartItems.item_sku = :item_sku"
+
+    with db.engine.begin() as connection:
+        total_results = connection.execute(sqlalchemy.text(count_query), params).scalar()
 
     with db.engine.begin() as connection:
         results = connection.execute(sqlalchemy.text(query), params).fetchall()
@@ -102,8 +117,8 @@ def search_orders(
             "line_item_total": row.item_qty,
             "timestamp": row.timestamp,
         })
-    if len(results) > 5:
-        next = str(search_page + 1)
+    if total_results > 5:
+        next = str(int(search_page) + 1)
     else:
         next = ""
     
