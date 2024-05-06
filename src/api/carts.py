@@ -82,7 +82,7 @@ def search_orders(
     if search_page and int(search_page) > 1:
         previous = str(int(search_page) - 1)
         
-    if sort_col == "":
+    if sort_col == "" or sort_col == "timestamp":
         sort_col = "cartItems.date"
     if sort_order == "":
         sort_order = "desc"
