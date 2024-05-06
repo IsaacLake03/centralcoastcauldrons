@@ -81,6 +81,7 @@ def search_orders(
     
     if search_page and int(search_page) > 1:
         previous = str(int(search_page) - 1)
+        
     if sort_col == "":
         sort_col = "cartItems.date"
     if sort_order == "":
@@ -115,7 +116,7 @@ def search_orders(
             "item_sku": row.item_sku,
             "customer_name": row.name,
             "line_item_total": row.item_qty,
-            "timestamp": row.timestamp,
+            "timestamp": row.timestamp
         })
     if total_results > 5:
         next = str(int(search_page) + 1)

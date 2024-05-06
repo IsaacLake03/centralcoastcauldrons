@@ -100,43 +100,20 @@ def get_bottle_plan():
                 ledger
             """)).fetchone()
         ml = darkml + greenml + redml + blueml
-        if gold > 100000:
+        if gold > 3000:
             for potion in potions:
-                if potion.red == 100 or potion.green == 100 or potion.blue == 100:
+                if potion.red == 100:
                     if potionqty==0:
-                        if potion.red == 100:
-                            connection.execute(sqlalchemy.text(
-                                """
-                                UPDATE potions
-                                red = 90,
-                                green = 5,
-                                blue = 5,
-                                lock = False
-                                WHERE id = :id 
-                                """
-                            ))
-                        elif potion.green == 100:
-                            connection.execute(sqlalchemy.text(
-                                """
-                                UPDATE potions
-                                red = 5,
-                                green = 90,
-                                blue = 5,
-                                lock = False
-                                WHERE id = :id
-                                """
-                            ))
-                        elif potion.blue == 100:
-                            connection.execute(sqlalchemy.text(
-                                """
-                                UPDATE potions
-                                red = 5,
-                                green = 5,
-                                blue = 90,
-                                lock = False
-                                WHERE id = :id
-                                """
-                            ))
+                        connection.execute(sqlalchemy.text(
+                            """
+                            UPDATE potions
+                            red = 90,
+                            green = 5,
+                            blue = 5,
+                            lock = False
+                            WHERE id = :id 
+                            """
+                        ))
                     else:
                         connection.execute(sqlalchemy.text(
                             """
@@ -150,7 +127,7 @@ def get_bottle_plan():
     
     potionqty+=5
     
-    while ml >= 200 and potionqty<potion_cap:
+    while ml >= 100 and potionqty<potion_cap:
         for potion in potions:
             if(potionqty<potion_cap):
                 if potion.red <= redml and potion.green <= greenml and potion.blue <= blueml and potion.dark <= darkml and potion.lock == False:
