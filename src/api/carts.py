@@ -84,7 +84,7 @@ def search_orders(
         
     if sort_col == "" or sort_col == "timestamp":
         sort_col = "cartItems.date"
-    if sort_order == "" or sort_order == "search_sort_order.desc":
+    if sort_order == "" or sort_order == search_sort_order.desc:
         sort_order = "desc"
     else:
         sort_order = "asc"
