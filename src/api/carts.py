@@ -82,15 +82,15 @@ def search_orders(
     if search_page and int(search_page) > 1:
         previous = str(int(search_page) - 1)
         
-    if sort_col == "" or sort_col == "timestamp":
+    if sort_col == "" or sort_col == search_sort_options.timestamp:
         sort_col = "cartItems.date"
     if sort_order == "" or sort_order == search_sort_order.desc:
         sort_order = "desc"
-    else:
+    elif sort_order == search_sort_order.asc:
         sort_order = "asc"
-    if sort_col =="line_item_total":
+    if sort_col == search_sort_options.line_item_total:
         sort_col = "cartItems.item_qty"
-    if sort_col == "customer_name":
+    if sort_col == search_sort_options.customer_name:
         sort_col = "cust.name"
         
     
