@@ -122,17 +122,6 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         
         if ml_capacity >= 30000:
             barrelsize = 5000
-            connection.execute(sqlalchemy.text(
-                """
-                UPDATE potions
-                SET price = 40
-                """))
-        else:
-            connection.execute(sqlalchemy.text(
-                """
-                UPDATE potions
-                SET price = base_price
-                """))
 
     wholesale_catalog = sorted(wholesale_catalog, key=lambda barrel: barrel.ml_per_barrel, reverse=True)
 
