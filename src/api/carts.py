@@ -86,6 +86,10 @@ def search_orders(
         sort_col = "cartItems.date"
     if sort_order == "":
         sort_order = "desc"
+    if sort_col =="line_item_total":
+        sort_col = "cartItems.item_qty"
+    if sort_col == "customer_name":
+        sort_col = "cust.name"
         
     
 
