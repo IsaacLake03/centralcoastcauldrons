@@ -68,7 +68,7 @@ def search_orders(
     params = {}
     if customer_name != "":
         query += " WHERE cust.name = :name"
-        params["name"] = customer_name
+        params["name"] = "%"+customer_name+"%"
 
     if potion_sku != "":
         query += " AND cartItems.item_sku = :item_sku" if "WHERE" in query else " WHERE cartItems.item_sku = :item_sku"
@@ -106,7 +106,7 @@ def search_orders(
         JOIN potions pot ON cartItems.item_sku = pot.potion_sku
     """
     if customer_name != "":
-        count_query += " WHERE cust.name = :name"
+        count_query += " WHERE cust.name LIKE :name"
     if potion_sku != "":
         count_query += " AND cartItems.item_sku = :item_sku" if "WHERE" in count_query else " WHERE cartItems.item_sku = :item_sku"
 
