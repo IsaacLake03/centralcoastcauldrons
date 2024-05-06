@@ -122,7 +122,7 @@ def search_orders(
             "line_item_total": row.item_qty,
             "timestamp": row.timestamp
         })
-    if total_results > 5-int(search_page)*5:
+    if total_results-(int(search_page)-1)*5 > 5:
         next = str(int(search_page) + 1)
     else:
         next = ""
