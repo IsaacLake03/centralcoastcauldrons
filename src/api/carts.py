@@ -92,6 +92,8 @@ def search_orders(
         sort_col = "cartItems.item_qty"
     if sort_col == search_sort_options.customer_name:
         sort_col = "cust.name"
+    if sort_col == search_sort_options.item_sku:
+        sort_col = "cartItems.item_sku"
         
     
 
