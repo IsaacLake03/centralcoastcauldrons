@@ -126,8 +126,10 @@ def get_bottle_plan():
     increments = {potion.id: 0 for potion in potions}
     
     potionqty+=5
+    loop = True
     
-    while ml >= 100 and potionqty<potion_cap:
+    while ml >= 100 and potionqty<potion_cap and loop:
+        loop = False
         for potion in potions:
             if(potionqty<potion_cap):
                 if potion.red <= redml and potion.green <= greenml and potion.blue <= blueml and potion.dark <= darkml and potion.lock == False:
@@ -138,6 +140,7 @@ def get_bottle_plan():
                     redml -= potion.red
                     blueml -= potion.blue
                     ml -= 100
+                    loop = True
     for potion in potions:
         if increments[potion.id] >= 1:
             order.append({
