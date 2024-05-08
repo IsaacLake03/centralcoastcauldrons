@@ -117,13 +117,14 @@ def search_orders(
 
     with db.engine.begin() as connection:
         results = connection.execute(sqlalchemy.text(query), params).fetchall()
+        potionPrices = connection.execute(sqlalchemy.text("SELECT potion_sku, price FROM potions")).fetchall()
     
     for row in results:
         result.append({
             "line_item_id": row.potion_id,
             "item_sku": row.item_sku,
             "customer_name": row.name,
-            "line_item_total": row.item_qty,
+            "line_item_total": row.item_qty*potionPrices[row.potion_id-1].price,
             "timestamp": row.timestamp,
         })
     if total_results-(int(search_page)-1)*5 > 5:
