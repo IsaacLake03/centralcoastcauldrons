@@ -67,17 +67,17 @@ def search_orders(
     """
     params = {}
     if customer_name != "":
-        query += " WHERE cust.name = :name"
+        query += " WHERE cust.name ILIKE :name"
         params["name"] = "%"+customer_name+"%"
 
     if potion_sku != "":
-        query += " AND cartItems.item_sku = :item_sku" if "WHERE" in query else " WHERE cartItems.item_sku = :item_sku"
-        params["item_sku"] = potion_sku
+        query += " AND cartItems.item_sku ILIKE :item_sku" if "WHERE" in query else " WHERE cartItems.item_sku ILIKE :item_sku"
+        params["item_sku"] = "%" + potion_sku + "%"
         
     if not search_page:
         search_page = "1"
     
-    params["page"] = search_page
+    params["page"] = int(search_page)
     
     if search_page and int(search_page) > 1:
         previous = str(int(search_page) - 1)
@@ -97,7 +97,7 @@ def search_orders(
         
     
 
-    query += f" ORDER BY {sort_col} {sort_order} LIMIT 5 OFFSET 5*(:page-1)"
+    query += f" ORDER BY {sort_col} {sort_order} LIMIT 5 OFFSET {5*(params['page']-1)}"
     
 
     count_query = """

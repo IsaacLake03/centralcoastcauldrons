@@ -24,7 +24,17 @@ def get_inventory():
             FROM 
                 ledger
             """)).fetchone()
+        red = connection.execute(sqlalchemy.text(
+            """
+            SELECT 
+                SUM(CASE WHEN item_sku = 'RED_POTION' THEN 1 ELSE 0 END)
+            FROM 
+                ledger
+            """)).scalar_one()
+    print("Red_Potions: ", red)
     return {"number_of_potions": potions, "ml_in_barrels": ml, "gold": gold}
+
+
 
 # Gets called once a day
 @router.post("/plan")
