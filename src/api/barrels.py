@@ -104,7 +104,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
     order = []
-    barrelsize = 2000
+    barrelsize = 500
     print(wholesale_catalog)
     with db.engine.begin() as connection:
         greenml, blueml, darkml, redml, gold, ml_capacity = connection.execute(sqlalchemy.text(
