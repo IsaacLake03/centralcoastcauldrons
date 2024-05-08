@@ -27,7 +27,7 @@ def get_inventory():
         red = connection.execute(sqlalchemy.text(
             """
             SELECT 
-                SUM(CASE WHEN item_sku = 'RED_POTION' THEN 1 ELSE 0 END)
+                SUM(CASE WHEN item_sku = 'RED_POTION' THEN change ELSE 0 END)
             FROM 
                 ledger
             """)).scalar_one()
