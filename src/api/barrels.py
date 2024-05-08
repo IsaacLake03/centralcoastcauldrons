@@ -123,8 +123,8 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         if ml_capacity >= 30000:
             barrelsize = 5000
 
-    wholesale_catalog = sorted(wholesale_catalog, key=lambda barrel: barrel.ml_per_barrel, reverse=True)
-
+    wholesale_catalog = sorted(wholesale_catalog, key=lambda barrel: (barrel.price / barrel.ml_per_barrel))
+    
     for barrel in wholesale_catalog:
         if barrel.potion_type == [0, 1, 0, 0] and (barrel.ml_per_barrel >= barrelsize or (greenml < 1000 and barrel.ml_per_barrel >= 500)):
             cap = ml_capacity/3 - greenml

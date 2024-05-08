@@ -100,28 +100,6 @@ def get_bottle_plan():
                 ledger
             """)).fetchone()
         ml = darkml + greenml + redml + blueml
-        if gold > 3000:
-            for potion in potions:
-                if potion.red == 100:
-                    if potionqty==0:
-                        connection.execute(sqlalchemy.text(
-                            """
-                            UPDATE potions
-                            red = 90,
-                            green = 5,
-                            blue = 5,
-                            lock = False
-                            WHERE id = :id 
-                            """
-                        ))
-                    else:
-                        connection.execute(sqlalchemy.text(
-                            """
-                            UPDATE potions
-                            lock = True
-                            WHERE id = :id 
-                            """
-                        ))
 
     increments = {potion.id: 0 for potion in potions}
     
