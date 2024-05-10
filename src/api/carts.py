@@ -59,7 +59,7 @@ def search_orders(
         
     previous = ""
     query = """
-        SELECT cartItems.item_sku, cart.customer_id, cust.name, cust.class, cust.level, cartItems.item_qty, cartItems.date AS timestamp, pot.id AS potion_id
+        SELECT cartItems.item_sku, cart.customer_id, cust.name, cust.class, cust.level, cartItems.item_qty, cartItems.date AS timestamp, pot.id AS potion_id, cart.id AS cart_id
         FROM cart_items cartItems
         JOIN carts cart ON cartItems.cart_id = cart.id
         JOIN customers cust ON cart.customer_id = cust.id
@@ -121,7 +121,7 @@ def search_orders(
     
     for row in results:
         result.append({
-            "line_item_id": row.potion_id,
+            "line_item_id": row.potion_id*7+row.cart_id*31,
             "item_sku": row.item_sku,
             "customer_name": row.name,
             "line_item_total": row.item_qty*potionPrices[row.potion_id-1].price,
