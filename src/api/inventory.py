@@ -53,7 +53,7 @@ def get_capacity_plan():
             FROM 
                 ledger
             """)).fetchone()
-    if gold > 2000:
+    if gold > 4000:
         if(ml_cap < 30000):
             return{
                 "potion_capacity": 0,
