@@ -121,7 +121,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
             """)).first()
         
         if ml_capacity >= 30000:
-            barrelsize = 5000
+            barrelsize = 50000
 
     wholesale_catalog = sorted(wholesale_catalog, key=lambda barrel: (barrel.price / barrel.ml_per_barrel))
     
